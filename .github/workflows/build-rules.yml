@@ -3,7 +3,7 @@ name: Build sing-box rule-sets
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 */12 * * *"  # 每 12 小时跑一次（UTC）
+    - cron: "17 */12 * * *" # 每 12 小时（UTC）
 
 permissions:
   contents: write
@@ -11,80 +11,97 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 不要启用依赖缓存（你没有 go.sum，会一直 warning；也没必要）
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: "1.22"
+          cache: false
 
+      - name: Install tools
+        run: |
+          set -eux
+          sudo apt-get update
+          sudo apt-get install -y jq curl git
+
+      # 关键：正确安装方式（不要 /v3/cmd/…）
       - name: Install sing-rules-converter
         run: |
           set -eux
-          go install github.com/solanab/sing-rules-converter@latest
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-          sing-rules-converter -h
+          go install github.com/solanab/sing-rules-converter@v0.0.0-20240722172734-5268600e12f4
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          sing-rules-converter -h || true
 
       - name: Install sing-box
         run: |
           set -eux
-          # 取最新 stable（你也可以固定版本）
-          SB_VER=$(curl -fsSL https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r .tag_name)
-          ARCH=linux-amd64
+          SB_VER="$(curl -fsSL https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r .tag_name)"
+          ARCH="linux-amd64"
           URL="https://github.com/SagerNet/sing-box/releases/download/${SB_VER}/sing-box-${SB_VER#v}-${ARCH}.tar.gz"
           curl -fsSL "$URL" -o sb.tgz
           tar -xzf sb.tgz
           sudo mv sing-box-*/sing-box /usr/local/bin/sing-box
           sing-box version
 
-      - name: Build rule-set source JSON + compile SRS
+      - name: Build rule-set JSON + SRS
         run: |
           set -eux
-          mkdir -p rule_json rule_srs tmp
+          mkdir -p dist/rule_json dist/rule_srs tmp
 
           # 读取 source.txt，按 tag 聚合 URL
-          awk '
-            NF>=2 { tag=$1; url=$2; urls[tag]=urls[tag] " " url }
-            END { for (t in urls) print t urls[t] }
-          ' source.txt | while read -r tag rest; do
-            echo "==> Building: $tag"
+          awk 'NF>=2 { tag=$1; url=$2; urls[tag]=urls[tag] " " url }
+               END { for (t in urls) print t urls[t] }' source.txt \
+          | while read -r tag rest; do
+              echo "==> Building: $tag"
 
-            # 1) 拉取并合并原始 ruleset 文本到 tmp/<tag>.txt
-            : > "tmp/${tag}.txt"
-            for u in $rest; do
-              echo "-- fetch $u"
-              curl -fsSL "$u" >> "tmp/${tag}.txt"
-              echo "" >> "tmp/${tag}.txt"
+              : > "tmp/${tag}.txt"
+              for u in $rest; do
+                echo "-- fetch $u"
+                curl -fsSL "$u" >> "tmp/${tag}.txt"
+                echo "" >> "tmp/${tag}.txt"
+              done
+
+              # 转为 sing-box rule-set source json（converter 兼容混合规则语法）
+              sing-rules-converter -m -v 3 -o "dist/rule_json/${tag}.json" "tmp/${tag}.txt"
+
+              # 编译为 .srs
+              sing-box rule-set compile --output "dist/rule_srs/${tag}.srs" "dist/rule_json/${tag}.json"
             done
-
-            # 2) 转换为 sing-box rule-set source format JSON
-            #    converter 会尽量识别 surge/clash 等语法并输出 sing-box rules
-            sing-rules-converter -m -v 3 -o "rule_json/${tag}.json" "tmp/${tag}.txt"
-
-            # 3) 编译为二进制 .srs（性能更好）
-            sing-box rule-set compile --output "rule_srs/${tag}.srs" "rule_json/${tag}.json"
-          done
 
       - name: Publish to rule-set branch
         run: |
           set -eux
-          BR=rule-set
+          BR="rule-set"
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 切到/创建 rule-set 分支并覆盖内容
-          git fetch origin ${BR} || true
-          git checkout -B ${BR}
+          # 保存生成物到一个临时目录
+          rm -rf publish
+          mkdir -p publish
+          cp -r dist/* publish/
 
+          # 切换到 rule-set 分支（不存在就创建）
+          if git ls-remote --exit-code --heads origin "$BR" >/dev/null 2>&1; then
+            git fetch origin "$BR"
+            git checkout -B "$BR" "origin/$BR"
+          else
+            git checkout --orphan "$BR"
+            git rm -rf . || true
+          fi
+
+          # 用 publish 覆盖分支内容
           rm -rf rule_json rule_srs
-          git checkout main -- rule_json rule_srs 2>/dev/null || true
+          cp -r publish/* .
 
-          # 复制输出
-          # 注意：上一步在当前工作区已经生成了 rule_json/rule_srs
-          # 这里确保它们被提交
-          git add rule_json rule_srs source.txt || true
+          # 也把 source.txt 带上，方便你确认来源
+          cp -f source.txt source.txt || true
 
+          git add -A
           git commit -m "Update rule-sets" || echo "No changes"
-          git push -f origin ${BR}
+          git push -f origin "$BR"
