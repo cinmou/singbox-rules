@@ -11,7 +11,8 @@ import requests
 from typing import Dict, List, Tuple
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-SOURCES_YML = os.path.join(ROOT, "sources.yml")
+SOURCES_URL = "https://raw.githubusercontent.com/cinmou/singbox-rules/refs/heads/main/source.yml"
+LOCAL_SOURCES_YML = os.path.join(ROOT, "source.yml")
 OUT_JSON_DIR = os.path.join(ROOT, "output", "json")
 
 UA = "singbox-rules-builder/1.0"
@@ -124,8 +125,20 @@ def build_ruleset_json(domains: List[str], suffixes: List[str], cidrs: List[str]
 def main():
     os.makedirs(OUT_JSON_DIR, exist_ok=True)
 
-    with open(SOURCES_YML, "r", encoding="utf-8") as f:
-        sources = yaml.safe_load(f)
+    # Load sources.yml (prefer remote, fallback to local)
+    try:
+        print(f"[INFO] Fetching sources from remote: {SOURCES_URL}")
+        resp = requests.get(SOURCES_URL, headers={"User-Agent": UA}, timeout=TIMEOUT)
+        resp.raise_for_status()
+        sources = yaml.safe_load(resp.text)
+    except Exception as e:
+        print(f"[WARN] Remote fetch failed: {e}")
+        print(f"[INFO] Falling back to local file: {LOCAL_SOURCES_YML}")
+        with open(LOCAL_SOURCES_YML, "r", encoding="utf-8") as f:
+            sources = yaml.safe_load(f)
+
+if not isinstance(sources, dict):
+    raise RuntimeError("source.yml format invalid: expect mapping")
 
     if not isinstance(sources, dict):
         raise RuntimeError("sources.yml format invalid: expect mapping")
