@@ -125,7 +125,8 @@ def build_ruleset_json(domains: List[str], suffixes: List[str], cidrs: List[str]
 def main():
     os.makedirs(OUT_JSON_DIR, exist_ok=True)
 
-    # Load sources.yml (prefer remote, fallback to local)
+    # Load source.yml (prefer remote, fallback to local)
+    sources = None
     try:
         print(f"[INFO] Fetching sources from remote: {SOURCES_URL}")
         resp = requests.get(SOURCES_URL, headers={"User-Agent": UA}, timeout=TIMEOUT)
@@ -137,11 +138,8 @@ def main():
         with open(LOCAL_SOURCES_YML, "r", encoding="utf-8") as f:
             sources = yaml.safe_load(f)
 
-if not isinstance(sources, dict):
-    raise RuntimeError("source.yml format invalid: expect mapping")
-
     if not isinstance(sources, dict):
-        raise RuntimeError("sources.yml format invalid: expect mapping")
+        raise RuntimeError("source.yml format invalid: expect mapping (dict)")
 
     meta = {"generated_at": int(time.time()), "sets": {}}
 
@@ -185,6 +183,7 @@ if not isinstance(sources, dict):
     os.makedirs(os.path.join(ROOT, "output"), exist_ok=True)
     with open(os.path.join(ROOT, "output", "index.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
+
 
 if __name__ == "__main__":
     main()
