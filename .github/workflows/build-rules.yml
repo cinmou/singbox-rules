@@ -1,9 +1,9 @@
-name: Build sing-box rule-sets
+name: Build sing-box rule-sets (geo + lists)
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 */12 * * *" # 每 12 小时（UTC）
+    - cron: "17 */12 * * *" # 每 12 小时 UTC
 
 permissions:
   contents: write
@@ -11,32 +11,39 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 不要启用依赖缓存（你没有 go.sum，会一直 warning；也没必要）
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: "1.22"
           cache: false
 
-      - name: Install tools
+      - name: Install deps
         run: |
           set -eux
           sudo apt-get update
-          sudo apt-get install -y jq curl git
+          sudo apt-get install -y git curl jq
 
-      # 关键：正确安装方式（不要 /v3/cmd/…）
-      - name: Install sing-rules-converter
+      # 1) 从源码编译 sing-rules-converter（避免 go install 路径坑）
+      - name: Build sing-rules-converter (from source)
         run: |
           set -eux
-          go install github.com/solanab/sing-rules-converter@v0.0.0-20240722172734-5268600e12f4
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-          sing-rules-converter -h || true
+          git clone --depth=1 https://github.com/solanab/sing-rules-converter.git tools/sing-rules-converter
+          (cd tools/sing-rules-converter && go build -o ../../bin/sing-rules-converter ./)
+          ./bin/sing-rules-converter -h || true
 
+      # 2) 从源码编译 meta-rules-converter（用于 geo 资源）
+      - name: Build meta-rules-converter (from source)
+        run: |
+          set -eux
+          git clone --depth=1 https://github.com/MetaCubeX/meta-rules-converter.git tools/meta-rules-converter
+          (cd tools/meta-rules-converter && go build -o ../../bin/meta-converter ./)
+          ./bin/meta-converter -h || true
+
+      # 3) 安装 sing-box（用来把 json 编译成 srs）
       - name: Install sing-box
         run: |
           set -eux
@@ -48,28 +55,47 @@ jobs:
           sudo mv sing-box-*/sing-box /usr/local/bin/sing-box
           sing-box version
 
-      - name: Build rule-set JSON + SRS
+      - name: Build geo rule-sets (via meta-rules-converter)
         run: |
           set -eux
-          mkdir -p dist/rule_json dist/rule_srs tmp
+          mkdir -p dist/rule_json dist/rule_srs tmp/geo
 
-          # 读取 source.txt，按 tag 聚合 URL
+          # 下载 geo 资源（meta-rules-dat 提供 GeoLite2-ASN.mmdb；v2ray-rules-dat 提供 geosite.dat）
+          curl -fsSL -o tmp/geo/geosite.dat "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
+          curl -fsSL -o tmp/geo/geoip.dat   "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat"
+          curl -fsSL -o tmp/geo/GeoLite2-ASN.mmdb "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb"
+
+          # 按 meta-rules-converter README：-t sing-box 输出 sing rule-set
+          ./bin/meta-converter geosite -f tmp/geo/geosite.dat -o tmp/geo/sing/geosite -t sing-box
+          ./bin/meta-converter geoip   -f tmp/geo/geoip.dat   -o tmp/geo/sing/geoip   -t sing-box
+          ./bin/meta-converter asn     -f tmp/geo/GeoLite2-ASN.mmdb -o tmp/geo/sing/asn -t sing-box
+
+          # 将 meta-converter 输出目录内的 json/srs 收集到 dist（不同版本工具输出文件名可能不同，用 find 兜底）
+          find tmp/geo/sing -type f -name "*.json" -exec cp -f {} dist/rule_json/ \;
+          find tmp/geo/sing -type f -name "*.srs"  -exec cp -f {} dist/rule_srs/ \;
+
+      - name: Build list rule-sets (from source.txt)
+        run: |
+          set -eux
+          mkdir -p dist/rule_json dist/rule_srs tmp/list
+
+          # 聚合同 tag 多条 URL
           awk 'NF>=2 { tag=$1; url=$2; urls[tag]=urls[tag] " " url }
                END { for (t in urls) print t urls[t] }' source.txt \
           | while read -r tag rest; do
-              echo "==> Building: $tag"
+              echo "==> list ruleset: $tag"
 
-              : > "tmp/${tag}.txt"
+              : > "tmp/list/${tag}.list"
               for u in $rest; do
                 echo "-- fetch $u"
-                curl -fsSL "$u" >> "tmp/${tag}.txt"
-                echo "" >> "tmp/${tag}.txt"
+                curl -fsSL "$u" >> "tmp/list/${tag}.list"
+                echo "" >> "tmp/list/${tag}.list"
               done
 
-              # 转为 sing-box rule-set source json（converter 兼容混合规则语法）
-              sing-rules-converter -m -v 3 -o "dist/rule_json/${tag}.json" "tmp/${tag}.txt"
+              # 用 sing-rules-converter 转成 sing-box rule-set source json
+              ./bin/sing-rules-converter -m -v 3 -o "dist/rule_json/${tag}.json" "tmp/list/${tag}.list"
 
-              # 编译为 .srs
+              # 编译成 .srs
               sing-box rule-set compile --output "dist/rule_srs/${tag}.srs" "dist/rule_json/${tag}.json"
             done
 
@@ -77,16 +103,13 @@ jobs:
         run: |
           set -eux
           BR="rule-set"
-
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 保存生成物到一个临时目录
-          rm -rf publish
-          mkdir -p publish
+          rm -rf publish && mkdir -p publish
           cp -r dist/* publish/
+          cp -f source.txt publish/source.txt
 
-          # 切换到 rule-set 分支（不存在就创建）
           if git ls-remote --exit-code --heads origin "$BR" >/dev/null 2>&1; then
             git fetch origin "$BR"
             git checkout -B "$BR" "origin/$BR"
@@ -95,12 +118,8 @@ jobs:
             git rm -rf . || true
           fi
 
-          # 用 publish 覆盖分支内容
-          rm -rf rule_json rule_srs
+          rm -rf rule_json rule_srs source.txt
           cp -r publish/* .
-
-          # 也把 source.txt 带上，方便你确认来源
-          cp -f source.txt source.txt || true
 
           git add -A
           git commit -m "Update rule-sets" || echo "No changes"
