@@ -1,0 +1,85 @@
+{
+  "version": 3,
+  "rules": [
+    {
+      "domain": [
+        "ai.google.dev",
+        "aistudio.google.com",
+        "alkalicore-pa.clients6.google.com",
+        "alkalimakersuite-pa.clients6.google.com",
+        "api-iam.intercom.io",
+        "api.groq.com",
+        "api.statsig.com",
+        "apple-relay.apple.com",
+        "apple-relay.cloudflare.com",
+        "apple-relay.fastly-edge.com",
+        "bard.google.com",
+        "chat.mistral.ai",
+        "console.mistral.ai",
+        "copilot.microsoft.com",
+        "cp4.cloudflare.com",
+        "gateway.ai.cloudflare.com",
+        "gemini.google.com",
+        "gspe1-ssl.ls.apple.com",
+        "guzzoni.apple.com",
+        "imagine.meta.com",
+        "o33249.ingest.sentry.io",
+        "openaiapi-site.azureedge.net",
+        "pplx-res.cloudinary.com",
+        "sydney.bing.com",
+        "www.bing.com"
+      ]
+    },
+    {
+      "domain_suffix": [
+        "anthropic.com",
+        "apps.mzstatic.com",
+        "byteoversea.com",
+        "chat.com",
+        "chatgpt.com",
+        "cici.com",
+        "ciciai.com",
+        "claude.ai",
+        "claudeusercontent.com",
+        "cursor-cdn.com",
+        "cursor.com",
+        "cursor.sh",
+        "cursorapi.com",
+        "deepmind.com",
+        "deepmind.google",
+        "dola.com",
+        "e-hentai.org",
+        "exhentai.org",
+        "gateway.icloud.com",
+        "geller-pa.googleapis.com",
+        "generativeai.google",
+        "generativelanguage.googleapis.com",
+        "githubcopilot.com",
+        "grazie.ai",
+        "grazie.aws.intellij.net",
+        "grok.com",
+        "groq.com",
+        "jetbrains.ai",
+        "livekit.cloud",
+        "makersuite.google.com",
+        "meta.ai",
+        "mistral.ai",
+        "oaistatic.com",
+        "oaiusercontent.com",
+        "openai.com",
+        "perplexity.ai",
+        "pplx.ai",
+        "proactivebackend-pa.googleapis.com",
+        "smoot.apple.com",
+        "sora.com",
+        "x.ai"
+      ]
+    },
+    {
+      "ip_cidr": [
+        "160.79.104.0/23",
+        "2607:6bc0::/48"
+      ]
+    }
+  ]
+}

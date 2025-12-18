@@ -1,0 +1,124 @@
+{
+  "generated_at": 1766021889,
+  "sets": {
+    "proxy": {
+      "json": "output/json/proxy.json",
+      "domain": 76,
+      "domain_suffix": 6891,
+      "ip_cidr": 99,
+      "sources": [
+        "https://raw.githubusercontent.com/cinmou/Quantumult_X/main/Filter/Proxy.list",
+        "https://raw.githubusercontent.com/ConnersHua/RuleGo/refs/heads/master/Surge/Ruleset/Extra/Streaming/!CN.list",
+        "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ProxyGFWlist.list"
+      ]
+    },
+    "china": {
+      "json": "output/json/china.json",
+      "domain": 64,
+      "domain_suffix": 677,
+      "ip_cidr": 22,
+      "sources": [
+        "https://raw.githubusercontent.com/cinmou/Quantumult_X/main/Filter/China.list",
+        "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/refs/heads/master/Clash/UnBan.list",
+        "https://raw.githubusercontent.com/ConnersHua/RuleGo/master/Surge/Ruleset/Direct+.list",
+        "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/GoogleCN.list",
+        "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ChinaMedia.list",
+        "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ChinaDomain.list"
+      ]
+    },
+    "reject": {
+      "json": "output/json/reject.json",
+      "domain": 292,
+      "domain_suffix": 762,
+      "ip_cidr": 6,
+      "sources": [
+        "https://raw.githubusercontent.com/cinmou/Quantumult_X/main/Filter/Reject.list",
+        "https://raw.githubusercontent.com/ConnersHua/RuleGo/master/Surge/Ruleset/Extra/Reject/Advertising.list",
+        "https://raw.githubusercontent.com/ConnersHua/RuleGo/master/Surge/Ruleset/Extra/Reject/Tracking.list"
+      ]
+    },
+    "ai": {
+      "json": "output/json/ai.json",
+      "domain": 25,
+      "domain_suffix": 41,
+      "ip_cidr": 2,
+      "sources": [
+        "https://raw.githubusercontent.com/cinmou/Quantumult_X/main/Filter/AI.list"
+      ]
+    },
+    "paypal": {
+      "json": "output/json/paypal.json",
+      "domain": 0,
+      "domain_suffix": 4,
+      "ip_cidr": 0,
+      "sources": [
+        "https://raw.githubusercontent.com/ConnersHua/RuleGo/refs/heads/master/Surge/Ruleset/Extra/PayPal.list"
+      ]
+    },
+    "nintendo": {
+      "json": "output/json/nintendo.json",
+      "domain": 0,
+      "domain_suffix": 15,
+      "ip_cidr": 0,
+      "sources": [
+        "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/refs/heads/master/Clash/Ruleset/Nintendo.list"
+      ]
+    },
+    "telegram": {
+      "json": "output/json/telegram.json",
+      "domain": 0,
+      "domain_suffix": 6,
+      "ip_cidr": 7,
+      "sources": [
+        "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Telegram.list"
+      ]
+    },
+    "tiktok": {
+      "json": "output/json/tiktok.json",
+      "domain": 1,
+      "domain_suffix": 12,
+      "ip_cidr": 0,
+      "sources": [
+        "https://raw.githubusercontent.com/Semporia/TikTok-Unlock/master/Loon/TikTok.list"
+      ]
+    },
+    "youtube": {
+      "json": "output/json/youtube.json",
+      "domain": 3,
+      "domain_suffix": 11,
+      "ip_cidr": 0,
+      "sources": [
+        "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/refs/heads/master/Clash/Ruleset/YouTube.list",
+        "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/refs/heads/master/Clash/Ruleset/YouTubeMusic.list"
+      ]
+    },
+    "google": {
+      "json": "output/json/google.json",
+      "domain": 11,
+      "domain_suffix": 50,
+      "ip_cidr": 28,
+      "sources": [
+        "https://raw.githubusercontent.com/cinmou/Quantumult_X/main/Filter/Alphabet.list",
+        "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Ruleset/GoogleFCM.list"
+      ]
+    },
+    "apple": {
+      "json": "output/json/apple.json",
+      "domain": 10,
+      "domain_suffix": 19,
+      "ip_cidr": 0,
+      "sources": [
+        "https://raw.githubusercontent.com/cinmou/Quantumult_X/main/Filter/Apple.list"
+      ]
+    },
+    "lan": {
+      "json": "output/json/lan.json",
+      "domain": 6,
+      "domain_suffix": 117,
+      "ip_cidr": 18,
+      "sources": [
+        "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Lan/Lan.list"
+      ]
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "version": 3,
+  "rules": [
+    {
+      "domain": [
+        "appstoreconnect.apple.com",
+        "beta.apple.com",
+        "iosapps-ssl.itunes.apple.com",
+        "itcmobile.itunes.apple.com",
+        "linear.tv.apple.com",
+        "play-edge.itunes.apple.com",
+        "ppq.apple.com",
+        "testflight.apple.com",
+        "tv.applemusic.com",
+        "uts-api.itunes.apple.com"
+      ]
+    },
+    {
+      "domain_suffix": [
+        "aaplimg.com",
+        "apple-cloudkit.com",
+        "apple-livephotoskit.com",
+        "apple-mapkit.com",
+        "apple.co",
+        "apple.com",
+        "apple.com.cn",
+        "applemusic.com",
+        "apps.apple.com",
+        "appstore.com",
+        "apzones.com",
+        "cdn-apple.com",
+        "icloud-content.com",
+        "icloud.com",
+        "icloud.com.cn",
+        "itunes-apple.com.akadns.net",
+        "itunes.apple.com",
+        "me.com",
+        "mzstatic.com"
+      ]
+    }
+  ]
+}
