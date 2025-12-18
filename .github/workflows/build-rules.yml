@@ -22,7 +22,10 @@ jobs:
 
       - name: Install sing-rules-converter
         run: |
+          set -eux
           go install github.com/solanab/sing-rules-converter@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+          sing-rules-converter -h
 
       - name: Install sing-box
         run: |
