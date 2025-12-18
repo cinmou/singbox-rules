@@ -1,126 +1,58 @@
-name: Build sing-box rule-sets (geo + lists)
+name: "Build RuleSet"
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: "17 */12 * * *" # 每 12 小时 UTC
-
-permissions:
-  contents: write
+    - cron: "0 20 * * *"   # UTC 20:00（= 中国时间+8 的 04:00）
+  workflow_dispatch:
 
 jobs:
-  build:
+  update-rule-set:
+    name: "Update sing-box rule-set"
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
-      - name: Checkout
+      - name: "Checkout"
         uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
-          cache: false
+          fetch-depth: 1
 
-      - name: Install deps
+      - name: "Setup sing-box"
+        env:
+          SING_BOX_DEB_URL: "https://github.com/SagerNet/sing-box/releases/download/v1.10.0-beta.5/sing-box_1.10.0-beta.5_linux_amd64.deb"
         run: |
-          set -eux
-          sudo apt-get update
-          sudo apt-get install -y git curl jq
-
-      # 1) 从源码编译 sing-rules-converter（避免 go install 路径坑）
-      - name: Build sing-rules-converter (from source)
-        run: |
-          set -eux
-          git clone --depth=1 https://github.com/solanab/sing-rules-converter.git tools/sing-rules-converter
-          (cd tools/sing-rules-converter && go build -o ../../bin/sing-rules-converter ./)
-          ./bin/sing-rules-converter -h || true
-
-      # 2) 从源码编译 meta-rules-converter（用于 geo 资源）
-      - name: Build meta-rules-converter (from source)
-        run: |
-          set -eux
-          git clone --depth=1 https://github.com/MetaCubeX/meta-rules-converter.git tools/meta-rules-converter
-          (cd tools/meta-rules-converter && go build -o ../../bin/meta-converter ./)
-          ./bin/meta-converter -h || true
-
-      # 3) 安装 sing-box（用来把 json 编译成 srs）
-      - name: Install sing-box
-        run: |
-          set -eux
-          SB_VER="$(curl -fsSL https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r .tag_name)"
-          ARCH="linux-amd64"
-          URL="https://github.com/SagerNet/sing-box/releases/download/${SB_VER}/sing-box-${SB_VER#v}-${ARCH}.tar.gz"
-          curl -fsSL "$URL" -o sb.tgz
-          tar -xzf sb.tgz
-          sudo mv sing-box-*/sing-box /usr/local/bin/sing-box
+          set -Eeuo pipefail
+          wget -O sing-box.deb "$SING_BOX_DEB_URL"
+          sudo dpkg -i sing-box.deb
+          rm -f sing-box.deb
           sing-box version
 
-      - name: Build geo rule-sets (via meta-rules-converter)
+      - name: "Setup python venv"
         run: |
-          set -eux
-          mkdir -p dist/rule_json dist/rule_srs tmp/geo
+          set -Eeuo pipefail
+          python3 -m venv venv
+          source venv/bin/activate
+          pip3 install -U pip
+          pip3 install -r requirements.txt
 
-          # 下载 geo 资源（meta-rules-dat 提供 GeoLite2-ASN.mmdb；v2ray-rules-dat 提供 geosite.dat）
-          curl -fsSL -o tmp/geo/geosite.dat "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
-          curl -fsSL -o tmp/geo/geoip.dat   "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat"
-          curl -fsSL -o tmp/geo/GeoLite2-ASN.mmdb "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb"
-
-          # 按 meta-rules-converter README：-t sing-box 输出 sing rule-set
-          ./bin/meta-converter geosite -f tmp/geo/geosite.dat -o tmp/geo/sing/geosite -t sing-box
-          ./bin/meta-converter geoip   -f tmp/geo/geoip.dat   -o tmp/geo/sing/geoip   -t sing-box
-          ./bin/meta-converter asn     -f tmp/geo/GeoLite2-ASN.mmdb -o tmp/geo/sing/asn -t sing-box
-
-          # 将 meta-converter 输出目录内的 json/srs 收集到 dist（不同版本工具输出文件名可能不同，用 find 兜底）
-          find tmp/geo/sing -type f -name "*.json" -exec cp -f {} dist/rule_json/ \;
-          find tmp/geo/sing -type f -name "*.srs"  -exec cp -f {} dist/rule_srs/ \;
-
-      - name: Build list rule-sets (from source.txt)
+      - name: "Update rule-set"
         run: |
-          set -eux
-          mkdir -p dist/rule_json dist/rule_srs tmp/list
+          set -Eeuo pipefail
+          source venv/bin/activate
+          python3 main.py
 
-          # 聚合同 tag 多条 URL
-          awk 'NF>=2 { tag=$1; url=$2; urls[tag]=urls[tag] " " url }
-               END { for (t in urls) print t urls[t] }' source.txt \
-          | while read -r tag rest; do
-              echo "==> list ruleset: $tag"
-
-              : > "tmp/list/${tag}.list"
-              for u in $rest; do
-                echo "-- fetch $u"
-                curl -fsSL "$u" >> "tmp/list/${tag}.list"
-                echo "" >> "tmp/list/${tag}.list"
-              done
-
-              # 用 sing-rules-converter 转成 sing-box rule-set source json
-              ./bin/sing-rules-converter -m -v 3 -o "dist/rule_json/${tag}.json" "tmp/list/${tag}.list"
-
-              # 编译成 .srs
-              sing-box rule-set compile --output "dist/rule_srs/${tag}.srs" "dist/rule_json/${tag}.json"
-            done
-
-      - name: Publish to rule-set branch
+      - name: "Compile rule-set"
         run: |
-          set -eux
-          BR="rule-set"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          set -Eeuo pipefail
+          bash compile.sh
 
-          rm -rf publish && mkdir -p publish
-          cp -r dist/* publish/
-          cp -f source.txt publish/source.txt
-
-          if git ls-remote --exit-code --heads origin "$BR" >/dev/null 2>&1; then
-            git fetch origin "$BR"
-            git checkout -B "$BR" "origin/$BR"
-          else
-            git checkout --orphan "$BR"
-            git rm -rf . || true
-          fi
-
-          rm -rf rule_json rule_srs source.txt
-          cp -r publish/* .
+      - name: "Commit and push"
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
 
           git add -A
           git commit -m "Update rule-sets" || echo "No changes"
-          git push -f origin "$BR"
+          git push
