@@ -22,7 +22,7 @@ jobs:
 
       - name: Install sing-rules-converter
         run: |
-          go install github.com/solanab/sing-rules-converter/v3/cmd/sing-rules-converter@latest
+          go install github.com/solanab/sing-rules-converter@latest
 
       - name: Install sing-box
         run: |
@@ -58,10 +58,7 @@ jobs:
 
             # 2) 转换为 sing-box rule-set source format JSON
             #    converter 会尽量识别 surge/clash 等语法并输出 sing-box rules
-            sing-rules-converter \
-              --input "tmp/${tag}.txt" \
-              --output "rule_json/${tag}.json" \
-              --output-format sing-box
+            sing-rules-converter -m -v 3 -o "rule_json/${tag}.json" "tmp/${tag}.txt"
 
             # 3) 编译为二进制 .srs（性能更好）
             sing-box rule-set compile --output "rule_srs/${tag}.srs" "rule_json/${tag}.json"
