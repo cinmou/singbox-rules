@@ -1,26 +1,105 @@
+# =========================
+# Global / Proxy
+# 对应：🌏 全球加速
+# =========================
 proxy:
   - https://raw.githubusercontent.com/cinmou/Quantumult_X/main/Filter/Proxy.list
+  - https://raw.githubusercontent.com/ConnersHua/RuleGo/refs/heads/master/Surge/Ruleset/Extra/Streaming/!CN.list
   - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ProxyGFWlist.list
 
+
+# =========================
+# China / Direct
+# 对应：⏰ 中国网站
+# =========================
 china:
   - https://raw.githubusercontent.com/cinmou/Quantumult_X/main/Filter/China.list
-  - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ChinaDomain.list
-  - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ChinaMedia.list
-  - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/GoogleCN.list
   - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/refs/heads/master/Clash/UnBan.list
   - https://raw.githubusercontent.com/ConnersHua/RuleGo/master/Surge/Ruleset/Direct+.list
+  - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/GoogleCN.list
+  - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ChinaMedia.list
+  - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ChinaDomain.list
 
+
+# =========================
+# Reject / Ads
+# 对应：⛔ 广告拦截
+# =========================
 reject:
   - https://raw.githubusercontent.com/cinmou/Quantumult_X/main/Filter/Reject.list
   - https://raw.githubusercontent.com/ConnersHua/RuleGo/master/Surge/Ruleset/Extra/Reject/Advertising.list
   - https://raw.githubusercontent.com/ConnersHua/RuleGo/master/Surge/Ruleset/Extra/Reject/Tracking.list
 
+
+# =========================
+# AI
+# 对应：🤖 人工智障
+# =========================
+ai:
+  - https://raw.githubusercontent.com/cinmou/Quantumult_X/main/Filter/AI.list
+
+
+# =========================
+# PayPal
+# 对应：💳️ Paypal
+# =========================
+paypal:
+  - https://raw.githubusercontent.com/ConnersHua/RuleGo/refs/heads/master/Surge/Ruleset/Extra/PayPal.list
+
+
+# =========================
+# Nintendo
+# 对应：🎡 Nintendo
+# =========================
+nintendo:
+  - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/refs/heads/master/Clash/Ruleset/Nintendo.list
+
+
+# =========================
+# Telegram
+# 对应：📟 Telegram
+# =========================
+telegram:
+  - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Telegram.list
+
+
+# =========================
+# TikTok
+# 对应：🎵 TikTok
+# =========================
+tiktok:
+  - https://raw.githubusercontent.com/Semporia/TikTok-Unlock/master/Loon/TikTok.list
+
+
+# =========================
+# YouTube
+# 对应：🎞️ YouTube
+# =========================
 youtube:
   - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/refs/heads/master/Clash/Ruleset/YouTube.list
   - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/refs/heads/master/Clash/Ruleset/YouTubeMusic.list
 
-telegram:
-  - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Telegram.list
 
+# =========================
+# Google Services
+# 对应：🐶 谷歌服务
+# =========================
+google:
+  - https://raw.githubusercontent.com/cinmou/Quantumult_X/main/Filter/Alphabet.list
+  - https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Ruleset/GoogleFCM.list
+
+
+# =========================
+# Apple Services
+# 对应：🍎 苹果服务
+# =========================
+apple:
+  - https://raw.githubusercontent.com/cinmou/Quantumult_X/main/Filter/Apple.list
+
+
+# =========================
+# LAN / Direct
+# 对应：📡 全部直连
+# =========================
 lan:
   - https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Lan/Lan.list
